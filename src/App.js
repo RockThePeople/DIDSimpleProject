@@ -8,10 +8,10 @@ import { EthrDID } from 'ethr-did';
 import { useEffect, useState } from 'react';
 import { Resolver } from 'did-resolver'
 import { getResolver } from 'ethr-did-resolver';
-import { keypair_1, keypair_2} from './account'
+import { keypair_1, keypair_2 ,infuraKey } from './account'
 
 function App() {
-  const providerConfig = { name: 'mainnet', rpcUrl: 'https://mainnet.infura.io/v3/c249e2789fff4a6db1fd3ea782ffe5a4' };
+  const providerConfig = { name: 'mainnet', rpcUrl: `https://mainnet.infura.io/v3/${infuraKey}` };
   const ethrDidResolver = getResolver(providerConfig);
   const resolver = new Resolver(ethrDidResolver);
 
