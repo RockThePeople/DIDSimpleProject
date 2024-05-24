@@ -1,6 +1,14 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 /src/account.js
+/src/Token.json
+/src/simpleStorage.js
+/src/simpleStorage.json
+/src/didRecovery.json
+/src/comm.js
+/src/empoly.js
+/src/DB.js
+/src/sc.js
 
 # dependencies
 /node_modules
