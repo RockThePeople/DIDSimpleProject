@@ -6,7 +6,7 @@ import { keypair_2, infuraKey, employee_test } from './account';
 // import { createJWT } from 'did-jwt';
 
 const URL = "https://didserver.run.goorm.io";
-//const URL = "http://localhost:8080"
+// const URL = "http://localhost:8080"
 
 function App() {
 
@@ -120,7 +120,7 @@ function App() {
         if (data.length < 1) {
           alert("DID 생성이 수락되지 않음");
         } else {
-          localStorage.setItem("planzDID", data[0].did)
+          localStorage.setItem("planzDID", data)
         }
       } else {
         console.log("rejected")
