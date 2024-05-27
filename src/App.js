@@ -135,6 +135,9 @@ function App() {
   const ethrDid_2 = new EthrDID({ ...keypair_2 });
   const didRecover = async () => {
     const did = localStorage.getItem("planzDID");
+    if(!did){
+      return false;
+    }
     const res = await ethrDid_2.verifyJWT(did, resolver);
     console.log([res]);
     setRecoveredDID([res]);
@@ -144,7 +147,11 @@ function App() {
   // request account : "0x123....ab";
   const [checkSigner, setCheckSigner] = useState(false);
   const vendingMachineCheck = async () => {
-    didRecover();
+    const res = await didRecover();
+    if(!res) {
+      alert('검증할 DID가 없습니다');
+      return;
+    };
     const companyAccount = '0x9021361C5226099AA99370DfeD181c9E31469d3B'
     if (recoverdDID) {
       const signer = recoverdDID[0].signer.blockchainAccountId;
@@ -174,7 +181,7 @@ function App() {
       const data = await res.json()
       window.confirm("임시저장소의 데이터가 모두 사라집니다.");
       //실제 사용 시 아래 줄 enable
-      //localStorage.removeItem("planzDID");
+      localStorage.removeItem("planzDID");
       if (data.msg) { alert(data.msg); }
     } else {
       alert("재시도 바랍니다.")
