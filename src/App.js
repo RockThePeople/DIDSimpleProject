@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 import { Resolver } from 'did-resolver';
 import { getResolver } from 'ethr-did-resolver';
 import { keypair_2, infuraKey, employee_test } from './account';
-import { createJWT } from 'did-jwt';
+// import { createJWT } from 'did-jwt';
 
-const URL = "http://127.0.0.1:8080";
+const URL = "https://didserver.run.goorm.io";
+//const URL = "http://localhost:8080"
 
 function App() {
 
@@ -16,13 +17,9 @@ function App() {
 
   useEffect(() => {
     getRequestAccounts();
-    showMyDID();
   }, [])
 
-  // const handleCraete = () => {
-  //   const new_Account = createJWT();
-  //   console.log(new_Account);
-  // }
+  //암호화 JWE, JWS 방식 사용
 
   const [account, setAccount] = useState(null)
   const getRequestAccounts = async () => {
@@ -42,7 +39,6 @@ function App() {
   const [name,] = useState("head");
   const [position,] = useState("alex");
   // 인증된 이메일 정보 그대로 넘기기
-
   const [response, setResponse] = useState([]);
   const sendRequest = async () => {
     const res = await fetch(`${URL}/didrequest`, {
@@ -58,9 +54,7 @@ function App() {
       })
     })
     if (res.ok) {
-      const data = await res.json();
       console.log(res);
-      //didToString(data);
     } else {
       console.log("rejected")
     }
@@ -89,12 +83,6 @@ function App() {
     }
   }
 
-  // const didToString = (data) => {
-  //   const trim = data.join('.');
-  //   setDID(trim);
-  //   console.log(trim);
-  // }
-
   async function confirmDID(account) {
     const res = await fetch(`${URL}/approveRequest`, {
       method: 'POST',
@@ -111,14 +99,12 @@ function App() {
       console.log("rejected")
     }
   }
-  useEffect(() => {
-    showMyDID();
-  }, [])
 
   const [myDID, setMyDID] = useState([]);
   async function showMyDID() {
     const acc = await getRequestAccounts();
     const did = localStorage.getItem("planzDID");
+    setMyDID([did]);
     if (!did) {
       const res = await fetch(`${URL}/showMyDID`, {
         method: 'POST',
@@ -131,13 +117,11 @@ function App() {
       })
       if (res.ok) {
         const data = await res.json();
-        console.log(data);
-        setMyDID(data);
-        if (data.length < 1 && !did) {
-          alert("DID 생성해야함");
-          return;
+        if (data.length < 1) {
+          alert("DID 생성이 수락되지 않음");
+        } else {
+          localStorage.setItem("planzDID", data[0].did)
         }
-        localStorage.setItem("planzDID", data[0].did)
       } else {
         console.log("rejected")
       }
@@ -165,30 +149,50 @@ function App() {
     if (recoverdDID) {
       const signer = recoverdDID[0].signer.blockchainAccountId;
       const tokens = signer.split(':');
-      // 배열의 마지막 요소를 추출합니다.
       const lastToken = tokens[tokens.length - 1];
-      console.log(lastToken);
-      if (companyAccount === lastToken) { 
-        setCheckSigner(true); 
-        console.log("make coffee !")
+      console.log("signer: " + lastToken);
+      if (companyAccount === lastToken) {
+        setCheckSigner(true);
+        alert("유효한 서명 값, 커피 제조가 시작됩니다 !")
       }
       return;
     }
     return;
   }
 
+  const deleteDIDonDB = async () => {
+    const res = await fetch(`${URL}/deleteDIDonDB`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        account: account
+      })
+    })
+    if (res.ok) {
+      const data = await res.json()
+      window.confirm("임시저장소의 데이터가 모두 사라집니다.");
+      //실제 사용 시 아래 줄 enable
+      //localStorage.removeItem("planzDID");
+      if (data.msg) { alert(data.msg); }
+    } else {
+      alert("재시도 바랍니다.")
+    }
+  }
+
   return (
     <div className="App" style={{ margin: "50px 50px", fontSize: "20px" }}>
       <div>
-        <h3>이메일 인증 다음 DID 발급창입니다 (유저)</h3>
+        <h3>이메일 인증 다음 DID 발급창입니다 (유저)
+          <button onClick={sendRequest}>send</button></h3>
         <p>예시 계정 : {account}</p>
         <p>예시 이메일 : "{email}"</p>
         <p>예시 직책 : "{position}"</p>
         <p>예시 이름 : "{name}"</p>
-        <button onClick={sendRequest}>send</button>
       </div>
-      <h3>요청 목록 (회사) </h3>
-      <button onClick={getRequestList} style={{ marginTop: "30px" }}>Show List</button>
+      <h3>요청 목록 (회사)  <button onClick={getRequestList} style={{ marginTop: "30px" }}>Show List</button></h3>
+
       <ul>
         {response.map((data, idx) => (
           (<li key={idx}>{data.account} <button onClick={() => { confirmDID(data.account) }}>confirm</button></li>))
@@ -196,17 +200,17 @@ function App() {
           response.length == 0 && <p> * 현재 발급 요청목록이 없습니다</p>
         }
       </ul>
-      <h3>생성됐는지 확인 (유저) 개인정보 보호를 위해 아래 정보를 안전한 곳에 보관하세요</h3>
-      {myDID.length == 1 ? <>{myDID[0].did}</> : <></>}
-
-      <h3>DID 정보 풀어서 체크 (커피머신)</h3>
-      <button onClick={vendingMachineCheck} style={{ marginTop: "30px" }}>verify</button>
+      <h3>생성됐는지 확인 (유저) 개인정보 보호를 위해 아래 정보를 안전한 곳에 보관하세요<button onClick={showMyDID} style={{ marginTop: "30px" }}>My did</button></h3>
+      {myDID.length > 0 ? <>{myDID}</> : <></>}
+      <h3>DID를 안전한 곳에 복사/보관했다면 "Check" 버튼을 눌러 임시저장소로부터 DID를 삭제하세요 <button onClick={deleteDIDonDB} style={{ marginTop: "30px" }}>Check</button></h3>
+      <h3>DID 정보 풀어서 체크 (커피머신) <button onClick={vendingMachineCheck} style={{ marginTop: "30px" }}>verify</button></h3>
       {recoverdDID.length ?
         <div>
           <p>요청자 : {recoverdDID[0].payload.claims.account}</p>
           <p>서명자 : {recoverdDID[0].signer.blockchainAccountId}</p>
         </div> : <></>
-      }{checkSigner ? <p>유효한 서명값입니다. 커피 제조 시작! </p> : <></>}
+      }
+      {checkSigner ? <p>유효한 서명값입니다. 커피 제조 시작! </p> : <></>}
       <p></p>
     </div>
   );
